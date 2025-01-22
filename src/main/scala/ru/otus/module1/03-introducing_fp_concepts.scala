@@ -51,8 +51,47 @@ object recursion {
    * реализовать вычисление N числа Фибоначчи
    * F0 = 0, F1 = 1, Fn = Fn-1 + Fn - 2
    */
+  def fib(n: Int): Int = {
+    var prev = 0
+    var cur = 1
+    var i = 1
 
+    if (n == 0) {
+      cur = prev
+    } else {
+      while (i < n) {
+        val next = cur + prev
+        prev = cur
+        cur = next
+        i += 1
+      }
+    }
 
+    cur
+  }
+
+  def fibRec(n: Int): Int = if(n == 0) {
+    n
+  }
+  else if(n == 1) {
+    n
+  }
+  else {
+    fibRec(n - 1) + fibRec(n - 2)
+  }
+
+  def fibTailRec(n: Int): Int = {
+      @tailrec
+      def loop(i: Int, prev: Int, cur: Int): Int =
+        if( i == 0)
+          prev
+        else if(i == 1)
+          cur
+        else
+          loop(i = i-1, prev = cur, cur = prev + cur)
+
+    loop(n, 0, 1)
+  }
 }
 
 
@@ -140,11 +179,11 @@ object hof{
   class Dog extends Animal
   class Cat extends Animal
 
-  def treat(animal: Animal): Unit = ???
-  def treat(animal: Option[Animal]): Unit = ???
+  def treat(animal: Animal): Unit = ()
+  def treat(animal: Option[Animal]): Unit = ()
 
-  val d: Dog = ???
-  val dOpt: Option[Dog] = ???
+  val d: Dog = new Dog
+  val dOpt: Option[Dog] = Some(d)
   treat(d)
   treat(dOpt)
 
@@ -161,20 +200,24 @@ object hof{
   trait Option[+T]{
     def isEmpty: Boolean = if(this.isInstanceOf[None.type]) true else false
 
-    def get: T = ???
+    def get: T = this match {
+      case None => throw new Exception("empty Option")
+      case Some(v) => v
+    }
 
     def map[B](f: T => B): Option[B] = flatMap(v => Option(f(v)))
 
-    def flatMap[B](f: T => Option[B]): Option[B] = ???
-
-    def zip[B](obj: Option[B]): Option[(T, B)] = ???
+    def flatMap[B](f: T => Option[B]): Option[B] = this match {
+      case None => None
+      case Some(v) => f(v)
+    }
   }
 
   object Option{
     def apply[T](v: T): Option[T] = Some(v)
   }
 
-  val o1: Option[Int] = ???
+  val o1: Option[Int] = Option(1)
 
   val o2: Option[Int] = o1.map(_ + 2)
 
@@ -194,19 +237,20 @@ object hof{
    *
    * Реализовать метод printIfAny, который будет печатать значение, если оно есть
    */
-
+  def printIfAny[T](v: Option[T]): Unit = v.map(println)
 
   /**
    *
    * Реализовать метод zip, который будет создавать Option от пары значений из 2-х Option
    */
-
+  def zip[A, B](v1: Option[A], v2: Option[B]): Option[(A, B)] = v1.flatMap(a => v2.map(b => (a, b)))
 
   /**
    *
    * Реализовать метод filter, который будет возвращать не пустой Option
    * в случае если исходный не пуст и предикат от значения = true
    */
+  def filter[T](v: Option[T])(predicate: T => Boolean): Option[T] = v.flatMap(a => if(predicate(a)) Some(a) else None)
 
  }
 
@@ -221,14 +265,14 @@ object hof{
 
 
    trait List[+T]{
-     def ::[TT >: T](elem: TT): List[TT] = ???
+     def ::[TT >: T](elem: TT): List[TT] = list.::(elem, this)
    }
    case class ::[T](head: T, tail: List[T]) extends List[T]
    case object Nil extends List[Nothing]
 
    object List{
      def apply[A](v: A*): List[A] = if(v.isEmpty) Nil
-     else new ::(v.head, apply(v.tail:_*))
+     else ::(v.head, apply(v.tail:_*))
    }
 
    val l1: List[Nothing] = List()
@@ -239,38 +283,60 @@ object hof{
     /**
       * Конструктор, позволяющий создать список из N - го числа аргументов
       * Для этого можно воспользоваться *
-      * 
+      *
       * Например вот этот метод принимает некую последовательность аргументов с типом Int и выводит их на печать
       * def printArgs(args: Int*) = args.foreach(println(_))
       */
-
+    def apply[A](v: A*): List[A] = if(v.isEmpty) Nil else ::(v.head, apply(v.tail:_*))
     /**
       *
       * Реализовать метод reverse который позволит заменить порядок элементов в списке на противоположный
       */
-
+    def reverse[T](l: List[T]): List[T] = {
+      @tailrec
+      def loop(list: List[T], res: List[T]): List[T] = list match {
+        case ::(head, tail) => loop(tail, head :: res)
+        case Nil => res
+      }
+      loop(l, list.Nil)
+    }
     /**
       *
       * Реализовать метод map для списка который будет применять некую ф-цию к элементам данного списка
       */
-
+    def map[A, B](l: List[A])(f: A => B): List[B] = {
+      @tailrec
+      def loop(list: List[A], res: List[B]): List[B] = list match {
+        case ::(head, tail) => loop(tail, f(head) :: res)
+        case Nil => reverse(res)
+      }
+      loop(l, Nil)
+    }
 
     /**
       *
       * Реализовать метод filter для списка который будет фильтровать список по некому условию
       */
-
+    def filter[T](l: List[T])(p: T => Boolean): List[T] = {
+      @tailrec
+      def loop(list: List[T], res: List[T]): List[T] = list match {
+        case ::(head, tail) if p(head) => loop(tail, head :: res)
+        case ::(_, tail) => loop(tail, res)
+        case Nil => reverse(res)
+      }
+      loop(l, Nil)
+    }
     /**
       *
       * Написать функцию incList котрая будет принимать список Int и возвращать список,
       * где каждый элемент будет увеличен на 1
       */
-
+    def incList(l: List[Int]): List[Int] = map(l)(_ + 1)
 
     /**
       *
       * Написать функцию shoutString котрая будет принимать список String и возвращать список,
       * где к каждому элементу будет добавлен префикс в виде '!'
       */
-
+    def shoutString(l: List[String]): List[String] = map(l){a => s"!$a"}
  }
