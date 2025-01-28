@@ -42,8 +42,8 @@ object type_system {
 
   def ensureClose2[S, R](acquire: => S)(release: S => Any)(f: S => R): R = ???
 
-//  def ensureCloseFixed[R]: BufferedSource => R => R =
-//    ensureClose2(Source.fromFile(""))(_.close())
+  def ensureCloseFixed[R]: (BufferedSource => R) => R =
+    ensureClose2(Source.fromFile(""))(_.close())
 
 //  ensureClose(Source.fromFile(file))(s => s.close()){ s =>
 //    val l = s.getLines().toList
