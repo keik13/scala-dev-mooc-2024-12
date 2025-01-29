@@ -70,10 +70,8 @@ object recursion {
     cur
   }
 
-  def fibRec(n: Int): Int = if(n == 0) {
-    n
-  }
-  else if(n == 1) {
+  def fibRec(n: Int): Int =
+  if(n <= 1) {
     n
   }
   else {
