@@ -83,8 +83,6 @@ object recursion {
       def loop(i: Int, prev: Int, cur: Int): Int =
         if( i == 0)
           prev
-        else if(i == 1)
-          cur
         else
           loop(i = i-1, prev = cur, cur = prev + cur)
 
