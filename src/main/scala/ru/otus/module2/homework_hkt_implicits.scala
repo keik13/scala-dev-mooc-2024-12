@@ -1,7 +1,5 @@
 package ru.otus.module2
 
-import ru.otus.module2.higher_kinded_types.Bindable
-
 object homework_hkt_implicits{
 
   trait Bindable[F[_], A]{
@@ -17,4 +15,9 @@ object homework_hkt_implicits{
     override def flatMap[B](f: A => Option[B]): Option[B] = opt.flatMap(f)
   }
   //и тд для всех нужных нам тайп конструкторов
+
+  // вариант 2
+  def tuplef[F[_], A, B](fa: F[A], fb: F[B])(implicit convA: F[A] => Bindable[F, A], convB: F[B] => Bindable[F, B]): F[(A, B)] =
+    convA(fa).flatMap(a => convB(fb).map(b => (a, b)))
+
 }
