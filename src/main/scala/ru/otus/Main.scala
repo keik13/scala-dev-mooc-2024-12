@@ -1,6 +1,7 @@
 package ru.otus
 
 import ru.otus.module1.{future, hof, threads, type_system}
+import ru.otus.module2.{dataStructures, functional, transformers, validation}
 import ru.otus.module2.implicits.{implicit_conversions, implicit_scopes}
 
 import scala.util.{Failure, Success}
@@ -54,7 +55,10 @@ object Main {
     }
 
 
-    implicit_scopes
+   // dataStructures
+    validation
+   // functional
+    transformers
 
     Thread.sleep(4000)
 

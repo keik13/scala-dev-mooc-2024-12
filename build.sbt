@@ -7,3 +7,4 @@ organization := "ru.otus"
 version := "1.0"
 
 libraryDependencies += Dependencies.ScalaTest
+libraryDependencies += Dependencies.CatsCore
