@@ -1,5 +1,6 @@
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.postfixOps
+import scala.concurrent.duration._
 
 object  scala3Contextfunctions {
   // f(f1(f2....)
