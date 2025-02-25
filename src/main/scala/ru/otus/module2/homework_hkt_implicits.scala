@@ -7,5 +7,17 @@ object homework_hkt_implicits{
     def flatMap[B](f: A => F[B]): F[B]
   }
 
-  def tuplef[F[_], A, B](fa: F[A], fb: F[B]): F[(A, B)] = ???
+  def tuplef[F[_], A, B](fa: Bindable[F, A], fb: Bindable[F, B]): F[(A, B)] =
+    fa.flatMap(a => fb.map(b => (a, b)))
+
+  implicit def optBindable[A](opt: Option[A]): Bindable[Option, A] = new Bindable[Option, A] {
+    override def map[B](f: A => B): Option[B] = opt.map(f)
+    override def flatMap[B](f: A => Option[B]): Option[B] = opt.flatMap(f)
+  }
+  //и тд для всех нужных нам тайп конструкторов
+
+  // вариант 2
+  def tuplef[F[_], A, B](fa: F[A], fb: F[B])(implicit convA: F[A] => Bindable[F, A], convB: F[B] => Bindable[F, B]): F[(A, B)] =
+    convA(fa).flatMap(a => convB(fb).map(b => (a, b)))
+
 }
