@@ -2,7 +2,6 @@ package ru.otus.module3
 
 import zio._
 
-import java.io.IOException
 import scala.concurrent.Future
 import scala.io.StdIn
 import scala.language.postfixOps
@@ -25,21 +24,14 @@ object toyModel {
 
   case class ZIO[-R, +E, +A](run: R => Either[E, A]){
 
-    def map[B](f: A => B): ZIO[R, E, B] = flatMap(a => ZIO(r => Right(f(a))))
+    def map[B](f: A => B): ZIO[R, E, B] =
+      flatMap(a => ZIO(r => Right(f(a))))
 
     def flatMap[R1 <: R, E1 >: E, B](f: A => ZIO[R1, E1, B]): ZIO[R1, E1, B] =
-      ZIO(r => this.run(r).fold(e => ZIO.fail(e), v => f(v)).run(r))
-  }
-
-  object ZIO{
-
-    def effect[A](a: => A): ZIO[Any, Throwable, A] = try{
-      ZIO(_ => Right(a))
-    } catch {
-      case e: Throwable => fail(e)
-    }
-
-    def fail[E](e: E): ZIO[Any, E, Nothing] = ZIO(_ => Left(e))
+      ZIO(r => this.run(r).fold(
+        e => ZIO.fail(e).run(r),
+        v => f(v).run(r)
+      ))
   }
 
 
@@ -47,21 +39,37 @@ object toyModel {
    * Реализуем конструкторы под названием effect и fail
    */
 
+  object ZIO{
+    type Task[T] = ZIO[Any, Throwable, T]
+
+    def success[A](v: A): Task[A] = ZIO(_ => Right(v))
+
+    def effect[A](a: => A): Task[A] = try{
+      ZIO(_ => Right(a))
+    } catch {
+      case e: Throwable => fail(e)
+    }
+
+    def fail[E](e: E): ZIO[Any, E, Nothing] = ZIO( _ => Left(e))
+  }
+
+  val z1: ZIO[Any, Throwable, Unit] = ZIO.effect(println("Как тебя зовут?"))
+
 
   /** *
    * Напишите консольное echo приложение с помощью нашего игрушечного ZIO
    */
-    lazy val echo: ZIO[Any, Throwable, Unit] = for{
-      str <- ZIO.effect(StdIn.readLine())
-      _ <- ZIO.effect(println(str))
+    val readFromConsole: ZIO[Any, Throwable, String] = ZIO.effect(StdIn.readLine())
+    def writeToConsole(str: String): ZIO[Any, Throwable, Unit] =
+      ZIO.effect(println(str))
+
+    val echo: ZIO[Any, Throwable, Unit] =readFromConsole.flatMap(writeToConsole)
+
+    val echo2: ZIO[Any, Throwable, Unit] = for{
+      str <- readFromConsole
+      _ <- writeToConsole(str)
     } yield ()
 
-    def sumPure(x: Int, y: Int): Int = x + y
-
-//    def sum(x: Int, y: Int): ZIO[Any, Nothing, Int] = ZIO.fail{
-//      println(s"${x} ${y}")
-//      x + y
-//    }
 
 
   type Error
@@ -69,7 +77,7 @@ object toyModel {
 
 
 
-  lazy val _: Task[Int] = ??? // ZIO[Any, Throwable, Int]
+  lazy val _: Task[Int] = ??? // ZIO[Any, Throwable,Int]
   lazy val _: IO[Error, Int] = ??? // ZIO[Any, Error, Int]
   lazy val _: RIO[Environment, Int] = ??? // ZIO[Environment, Throwable, Int]
   lazy val _: URIO[Environment, Int] = ??? // ZIO[Environment, Nothing, Int]
@@ -80,30 +88,46 @@ object zioConstructors {
 
 
   // не падающий эффект
-  lazy val z1: UIO[Int] = ZIO.succeed(10)
 
+  val z1: UIO[Int] = ZIO.succeed(7)
 
   // любой эффект
-  lazy val z2: Task[Unit] = ZIO.attempt(println("Hello"))
+
+  val z2: Task[Unit] = ZIO.attempt(println("Hello"))
+
+
+  val z3: IO[Throwable, Nothing] = ZIO.fail(new Throwable("Ooops"))
+
+  def getUserNameByIdAsync(id: Int)(cb: Option[String] => Unit): Unit = {
+    val name = if(id == 1) Some("Alex") else None
+    cb(name)
+  }
+
+  val z4: ZIO[Any, Throwable, String] = ZIO.async{ callback =>
+    getUserNameByIdAsync(1) {
+      case Some(value) => callback(ZIO.succeed(value))
+      case None => callback(ZIO.fail(new Throwable("User not found")))
+    }
+  }
 
 
 
-  // From Future
+  // Из Future
   lazy val f: Future[Int] = ???
-  lazy val z4: Task[Int] = ZIO.fromFuture(implicit ec => f.map(_ + 1))
+  val z5: Task[Int] = ZIO.fromFuture(implicit ec => f.map(i => i + 1))
 
 
-  // From try
+  // Из try
   lazy val t: Try[String] = ???
-  lazy val z5: Task[String] = ZIO.fromTry(t)
+  val z6: Task[String] = ZIO.fromTry(t)
 
 
 
-  // From option
+  // Из option
   lazy val opt : Option[Int] = ???
-  lazy val z6: IO[Option[Nothing], Int] = ZIO.fromOption(opt)
-  lazy val z7: UIO[Option[Int]] = z6.option
-  lazy val z8: IO[Option[Nothing], Int] = z7.some
+  val z7: IO[Option[Nothing], Int] = ZIO.fromOption(opt)
+  val z8: UIO[Option[Int]] = z7.option
+  val z9: IO[Option[Nothing], Int] = z8.some
 
 
   type User
@@ -113,32 +137,26 @@ object zioConstructors {
   def getUser(): Task[Option[User]] = ???
   def getAddress(u: User): Task[Option[Address]] = ???
 
-  lazy val r: ZIO[Any, Option[Throwable], Address] = for{
+  val r: ZIO[Any, Option[Throwable], Address] = for{
     user <- getUser().some
     address <- getAddress(user).some
   } yield address
 
 
-
-  // From either
+  // Из either
   lazy val e: Either[String, Int] = ???
-  lazy val z9: IO[String, Int] = ZIO.fromEither(e)
-  lazy val z10: UIO[Either[String, Int]] = z9.either
-  lazy val z11: IO[String, Int] = z10.absolve
+  val z10: IO[String, Int] = ZIO.fromEither(e)
+  val z11: UIO[Either[String, Int]] = z10.either
+  val z12 = z11.absolve
 
-
-
-
-  // From function
-  lazy val z12: URIO[String, Unit] =
-    ZIO.fromFunction[String, Unit](str => println(str))
 
   // особые версии конструкторов
 
-  val _: UIO[Unit] = ZIO.unit
-  val _: UIO[Option[Nothing]] = ZIO.none
-  val _: UIO[Nothing] = ZIO.never
-  val _: IO[Int, Nothing] = ZIO.fail(1)
+  ZIO.unit // ZIO[Unit]
+  ZIO.none // ZIO[Option[Nothing]]
+  ZIO.never // UIO[Nothing]
+  ZIO.die(new Throwable("")) // UIO[Nothing]
+
 
 }
 
@@ -204,23 +222,23 @@ object zioOperators {
   lazy val r3 = ???
 
 
-  lazy val a: Task[Unit] = ???
+  lazy val a: Task[Int] = ???
   lazy val b: Task[String] = ???
 
   /**
    * последовательная комбинация эффектов a и b
    */
-  lazy val ab1: ZIO[Any, Throwable, String] = b.zipLeft(a)
+  lazy val ab1: ZIO[Any, Throwable, (Int, String)] = a zip b
 
   /**
    * последовательная комбинация эффектов a и b
    */
-  lazy val ab2 = ???
+  lazy val ab2: ZIO[Any, Throwable, Int] = a zipLeft b
 
   /**
    * последовательная комбинация эффектов a и b
    */
-  lazy val ab3 = ???
+  lazy val ab3: ZIO[Any, Throwable, String] = a zipRight b
 
 
   /**

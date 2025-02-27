@@ -58,7 +58,9 @@ object Main {
 
   //  catsTypeClasses
     // Thread.sleep(4000)
-     functionalProgram.declarativeEncoding.interpret(
-       functionalProgram.declarativeEncoding.greet)
+//     functionalProgram.declarativeEncoding.interpret(
+//       functionalProgram.declarativeEncoding.greet)
+
+
   }
 }
