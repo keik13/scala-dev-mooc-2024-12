@@ -16,7 +16,7 @@ object ZIOMain {
 
     Unsafe.unsafe { implicit unsafe =>
       zio.Runtime.default.unsafe.run(
-        di.cc3.provideEnvironment(environment)
+        ???
       )
     }
 
@@ -26,6 +26,7 @@ object ZIOMain {
 
 object ZIOMain2 extends ZIOAppDefault{
   override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] = ???
+
 }
 
 
