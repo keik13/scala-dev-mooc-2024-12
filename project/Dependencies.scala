@@ -10,5 +10,10 @@ object Dependencies {
                      "dev.zio" %% "zio-test" % ZioVersion  % Test,
                      "dev.zio" %% "zio-test-sbt" % ZioVersion  % Test,
                      "dev.zio" %% "zio-test-magnolia" % ZioVersion % Test)
+  lazy val ZioConfig: Seq[ModuleID] = Seq(
+    "dev.zio" %% "zio-config" % "4.0.2",
+    "dev.zio" %% "zio-config-magnolia" % "4.0.2",
+    "dev.zio" %% "zio-config-typesafe" % "4.0.2"
+  )
 
 }
