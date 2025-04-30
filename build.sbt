@@ -1,4 +1,3 @@
-
 scalaVersion := "2.13.16"
 
 
@@ -14,3 +13,10 @@ libraryDependencies ++= Dependencies.ZioConfig
 libraryDependencies ++= Dependencies.fs2
 libraryDependencies ++= Dependencies.http4s
 libraryDependencies ++= Dependencies.circe
+libraryDependencies ++= Dependencies.akkaContainers
+libraryDependencies += Dependencies.zioHttp
+libraryDependencies += Dependencies.liquibase
+libraryDependencies += Dependencies.postgres
+libraryDependencies += Dependencies.logback
+libraryDependencies ++= Dependencies.quill
+libraryDependencies ++= Dependencies.testContainers
