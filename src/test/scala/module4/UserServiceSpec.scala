@@ -36,6 +36,8 @@ object UserServiceSpec extends ZIOSpecDefault {
   def spec = suite("UserServiceSpec")(
     test("add user with role")(
       for {
+        userRepo <- ZIO.service[UserRepository]
+        _ <- userRepo.createRole(Role(Manager.code, "Manager"))
         userService <- ZIO.service[UserService]
         _ <- userService.addUserWithRole(users.head, Manager)
         result <- userService.listUsersDTO()
@@ -54,6 +56,7 @@ object UserServiceSpec extends ZIOSpecDefault {
       for {
         userRepo <- ZIO.service[UserRepository]
         userService <- ZIO.service[UserService]
+        _ <- userRepo.createRole(Role(Manager.code, "Manager"))
         _ <- userRepo.createUsers(users.tail)
         _ <- userService.addUserWithRole(users.head, Manager)
         result <- userService.listUsersWithRole(Manager)
